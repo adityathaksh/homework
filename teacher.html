@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teacher Portal</title>
+  <title>Teacher Portal - Aditya Thaksh International School</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
@@ -39,12 +39,14 @@
       </div>
       <div id="userInfo" class="hidden flex items-center gap-3">
         <span id="userTag" class="text-xs text-indigo-200 font-medium"></span>
-        <button onclick="handleLogout()" class="px-2.5 py-1 bg-rose-600 text-white text-xs rounded-md">Logout</button>
+        <button onclick="handleLogout()" class="px-2.5 py-1 bg-rose-600 text-white text-xs rounded-md hover:bg-rose-700">Logout</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-5xl mx-auto px-4 py-8 hidden" id="mainContent">
+  <main class="max-w-5xl mx-auto px-4 py-8 hidden space-y-8" id="mainContent">
+    
+    <!-- SUBMISSION FORM -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl mx-auto">
       <h2 class="text-xl font-bold mb-1">Submit Homework</h2>
       <p class="text-sm text-slate-500 mb-6">Fill in assignment details below for principal review.</p>
@@ -53,7 +55,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Date</label>
-            <input type="date" id="hwDate" required onchange="updateDayName()" class="w-full px-3 py-2 border rounded-lg outline-none">
+            <input type="date" id="hwDate" required onchange="updateDayName()" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Day</label>
@@ -64,7 +66,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Grade</label>
-            <select id="hwGrade" required class="w-full px-3 py-2 border rounded-lg outline-none">
+            <select id="hwGrade" required class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
               <option value="">Select Grade</option>
               <option value="K1">K1</option>
               <option value="K2">K2</option>
@@ -82,7 +84,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Subject</label>
-            <select id="hwSubject" required class="w-full px-3 py-2 border rounded-lg outline-none">
+            <select id="hwSubject" required class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
               <option value="">Select Subject</option>
               <option value="Math">Math</option>
               <option value="English">English</option>
@@ -111,18 +113,36 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Homework Details</label>
-          <textarea id="hwContent" rows="3" placeholder="e.g., ✏️ L/W 3 table 2 times in HW" required class="w-full px-3 py-2 border rounded-lg outline-none"></textarea>
+          <textarea id="hwContent" rows="3" placeholder="e.g., ✏️ L/W 3 table 2 times in HW" required class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
         </div>
 
-        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg">Submit Homework</button>
+        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors">Submit Homework</button>
       </form>
     </div>
+
+    <!-- MY SUBMISSIONS & EDIT SECTION -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl mx-auto">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">My Submissions</h3>
+          <p class="text-xs text-slate-500">View and edit homework entries submitted by you.</p>
+        </div>
+        <div>
+          <input type="date" id="teacherFilterDate" onchange="listenToMySubmissions()" class="px-3 py-1.5 border rounded-lg text-xs outline-none">
+        </div>
+      </div>
+
+      <div id="mySubmissionsList" class="space-y-4">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
   </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBesKlVSBr7a4ClbJ8yLQmFSlkJqDJeuVE",
@@ -137,7 +157,10 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const homeworkCol = collection(db, "homeworks");
+
     let currentUser = null;
+    let mySubmissionsUnsub = null;
 
     function getTeacherDisplayName(user) {
       if (!user) return "";
@@ -156,10 +179,13 @@
         const teacherName = getTeacherDisplayName(user);
         document.getElementById('hwTeacher').value = teacherName;
         document.getElementById('userTag').innerText = teacherName;
+
+        listenToMySubmissions();
       } else {
         document.getElementById('loginModal').classList.remove('hidden');
         document.getElementById('mainContent').classList.add('hidden');
         document.getElementById('userInfo').classList.add('hidden');
+        if (mySubmissionsUnsub) mySubmissionsUnsub();
       }
     });
 
@@ -179,6 +205,7 @@
     window.addEventListener("DOMContentLoaded", () => {
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('hwDate').value = today;
+      document.getElementById('teacherFilterDate').value = today;
       window.updateDayName();
     });
 
@@ -189,6 +216,7 @@
       document.getElementById('hwDay').value = days[new Date(dateVal).getDay()];
     };
 
+    // SUBMIT NEW HOMEWORK
     window.handleFormSubmit = async function(e) {
       e.preventDefault();
       const submitBtn = document.getElementById('submitBtn');
@@ -198,7 +226,7 @@
       const [year, month, day] = document.getElementById('hwDate').value.split('-');
 
       try {
-        await addDoc(collection(db, "homeworks"), {
+        await addDoc(homeworkCol, {
           date: document.getElementById('hwDate').value,
           formattedDate: `${day}-${month}-${year}`,
           day: document.getElementById('hwDay').value,
@@ -217,6 +245,81 @@
         alert("Submission failed.");
       } finally {
         submitBtn.disabled = false;
+      }
+    };
+
+    // LISTEN TO TEACHER'S OWN SUBMISSIONS
+    window.listenToMySubmissions = function() {
+      if (!currentUser) return;
+      if (mySubmissionsUnsub) mySubmissionsUnsub();
+
+      const selectedDate = document.getElementById('teacherFilterDate').value;
+      const q = query(
+        homeworkCol, 
+        where("createdBy", "==", currentUser.email), 
+        where("date", "==", selectedDate)
+      );
+
+      mySubmissionsUnsub = onSnapshot(q, (snapshot) => {
+        const container = document.getElementById('mySubmissionsList');
+        container.innerHTML = '';
+
+        if (snapshot.empty) {
+          container.innerHTML = `<div class="p-6 text-center text-slate-400 bg-slate-50 rounded-lg text-sm">No submissions found for this date.</div>`;
+          return;
+        }
+
+        snapshot.forEach((docSnap) => {
+          const item = { id: docSnap.id, ...docSnap.data() };
+          const card = document.createElement('div');
+          card.className = "p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3";
+          card.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="inline-block bg-indigo-100 text-indigo-800 text-xs font-semibold px-2 py-0.5 rounded mr-2">${item.subject}</span>
+                <span class="font-bold text-slate-800 text-sm">${item.grade} (${item.sections ? item.sections.join(', ') : ''})</span>
+              </div>
+              <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${item.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                ${item.status === 'approved' ? '✓ Approved' : '⏳ Pending'}
+              </span>
+            </div>
+            <div>
+              <textarea id="teacher-edit-${item.id}" rows="2" class="w-full text-sm p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white">${item.content}</textarea>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button onclick="saveTeacherEdit('${item.id}')" class="px-3 py-1 bg-indigo-600 text-white rounded-md text-xs hover:bg-indigo-700">Save Edit</button>
+              <button onclick="deleteTeacherEntry('${item.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 rounded-md text-xs hover:bg-rose-100">Delete</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      });
+    };
+
+    // SAVE EDITED HOMEWORK
+    window.saveTeacherEdit = async function(id) {
+      const newContent = document.getElementById(`teacher-edit-${id}`).value;
+      try {
+        await updateDoc(doc(db, "homeworks", id), { 
+          content: newContent,
+          updatedAt: serverTimestamp()
+        });
+        alert("Homework updated successfully!");
+      } catch (err) {
+        console.error("Update error: ", err);
+        alert("Failed to update homework.");
+      }
+    };
+
+    // DELETE HOMEWORK ENTRY
+    window.deleteTeacherEntry = async function(id) {
+      if (confirm("Are you sure you want to delete this submission?")) {
+        try {
+          await deleteDoc(doc(db, "homeworks", id));
+        } catch (err) {
+          console.error("Delete error: ", err);
+          alert("Failed to delete entry.");
+        }
       }
     };
   </script>
