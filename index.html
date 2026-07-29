@@ -26,8 +26,9 @@
   <main class="max-w-5xl mx-auto px-4 py-8">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
       <h2 class="text-xl font-bold text-slate-800">Approved Daily Agenda</h2>
-      <div class="flex gap-3 w-full sm:w-auto">
+      <div class="flex flex-wrap gap-3 w-full sm:w-auto">
         <input type="date" id="parentFilterDate" onchange="listenToParentData()" class="px-3 py-2 border rounded-lg text-sm outline-none">
+        
         <select id="parentFilterGrade" onchange="listenToParentData()" class="px-3 py-2 border rounded-lg text-sm outline-none">
           <option value="ALL">All Grades</option>
           <option value="K1">K1</option>
@@ -42,6 +43,13 @@
           <option value="Grade 8">Grade 8</option>
           <option value="Grade 9">Grade 9</option>
           <option value="Grade X">Grade X</option>
+        </select>
+
+        <select id="parentFilterSection" onchange="listenToParentData()" class="px-3 py-2 border rounded-lg text-sm outline-none">
+          <option value="ALL">All Sections</option>
+          <option value="Tulip">Tulip</option>
+          <option value="Orchid">Orchid</option>
+          <option value="Daffodil">Daffodil</option>
         </select>
       </div>
     </div>
@@ -80,6 +88,7 @@
       if (parentUnsub) parentUnsub();
       const selectedDate = document.getElementById('parentFilterDate').value;
       const selectedGrade = document.getElementById('parentFilterGrade').value;
+      const selectedSection = document.getElementById('parentFilterSection').value;
 
       const q = query(homeworkCol, where("date", "==", selectedDate), where("status", "==", "approved"));
 
@@ -89,7 +98,13 @@
         let items = [];
         snapshot.forEach(docSnap => items.push({ id: docSnap.id, ...docSnap.data() }));
 
-        if (selectedGrade !== 'ALL') items = items.filter(item => item.grade === selectedGrade);
+        if (selectedGrade !== 'ALL') {
+          items = items.filter(item => item.grade === selectedGrade);
+        }
+
+        if (selectedSection !== 'ALL') {
+          items = items.filter(item => item.sections && item.sections.includes(selectedSection));
+        }
 
         if (items.length === 0) {
           container.innerHTML = `<div class="col-span-full bg-white p-8 rounded-xl text-center text-slate-500">No homework posted for this filter.</div>`;
