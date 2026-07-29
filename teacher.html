@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
-  
+
   <!-- Login Modal -->
   <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md">
@@ -21,7 +21,7 @@
           <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
           <input type="password" id="loginPassword" required class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
-        <p id="loginError" class="text-xs text-rose-600 hidden">Invalid credentials.</p>
+        <p id="loginError" class="text-xs text-rose-600 hidden">Invalid credentials or permissions.</p>
         <button type="submit" id="loginBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg">Sign In</button>
       </form>
       <div class="mt-4 text-center">
@@ -185,27 +185,38 @@
         document.getElementById('loginModal').classList.remove('hidden');
         document.getElementById('mainContent').classList.add('hidden');
         document.getElementById('userInfo').classList.add('hidden');
-        if (mySubmissionsUnsub) mySubmissionsUnsub();
+        if (mySubmissionsUnsub) {
+          mySubmissionsUnsub();
+          mySubmissionsUnsub = null;
+        }
       }
     });
 
     window.handleLogin = async function(e) {
       e.preventDefault();
+      document.getElementById('loginError').classList.add('hidden');
       try {
         await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
       } catch (err) {
+        console.error("Login error:", err);
         document.getElementById('loginError').classList.remove('hidden');
       }
     };
 
     window.handleLogout = async function() {
-      await signOut(auth);
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.error("Logout error:", err);
+      }
     };
 
     window.addEventListener("DOMContentLoaded", () => {
       const today = new Date().toISOString().split('T')[0];
-      document.getElementById('hwDate').value = today;
-      document.getElementById('teacherFilterDate').value = today;
+      const hwDateInput = document.getElementById('hwDate');
+      const filterDateInput = document.getElementById('teacherFilterDate');
+      if (hwDateInput) hwDateInput.value = today;
+      if (filterDateInput) filterDateInput.value = today;
       window.updateDayName();
     });
 
@@ -219,15 +230,18 @@
     // SUBMIT NEW HOMEWORK
     window.handleFormSubmit = async function(e) {
       e.preventDefault();
+      if (!currentUser) return;
+      
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
 
       const sections = Array.from(document.querySelectorAll('.section-check:checked')).map(cb => cb.value);
-      const [year, month, day] = document.getElementById('hwDate').value.split('-');
+      const dateValue = document.getElementById('hwDate').value;
+      const [year, month, day] = dateValue.split('-');
 
       try {
         await addDoc(homeworkCol, {
-          date: document.getElementById('hwDate').value,
+          date: dateValue,
           formattedDate: `${day}-${month}-${year}`,
           day: document.getElementById('hwDay').value,
           grade: document.getElementById('hwGrade').value,
@@ -242,7 +256,8 @@
         alert("Homework submitted successfully!");
         document.getElementById('hwContent').value = '';
       } catch (err) {
-        alert("Submission failed.");
+        console.error("Submission error:", err);
+        alert("Submission failed. Check console for details.");
       } finally {
         submitBtn.disabled = false;
       }
@@ -251,9 +266,14 @@
     // LISTEN TO TEACHER'S OWN SUBMISSIONS
     window.listenToMySubmissions = function() {
       if (!currentUser) return;
-      if (mySubmissionsUnsub) mySubmissionsUnsub();
+      if (mySubmissionsUnsub) {
+        mySubmissionsUnsub();
+        mySubmissionsUnsub = null;
+      }
 
       const selectedDate = document.getElementById('teacherFilterDate').value;
+      const container = document.getElementById('mySubmissionsList');
+      
       const q = query(
         homeworkCol, 
         where("createdBy", "==", currentUser.email), 
@@ -261,7 +281,6 @@
       );
 
       mySubmissionsUnsub = onSnapshot(q, (snapshot) => {
-        const container = document.getElementById('mySubmissionsList');
         container.innerHTML = '';
 
         if (snapshot.empty) {
@@ -293,15 +312,20 @@
           `;
           container.appendChild(card);
         });
+      }, (error) => {
+        console.error("Firestore snapshot error:", error);
+        container.innerHTML = `<div class="p-6 text-center text-rose-500 bg-rose-50 rounded-lg text-xs">Query error: Missing index or permissions check required. Check F12 Console.</div>`;
       });
     };
 
     // SAVE EDITED HOMEWORK
     window.saveTeacherEdit = async function(id) {
-      const newContent = document.getElementById(`teacher-edit-${id}`).value;
+      const contentEl = document.getElementById(`teacher-edit-${id}`);
+      if (!contentEl) return;
+      
       try {
         await updateDoc(doc(db, "homeworks", id), { 
-          content: newContent,
+          content: contentEl.value,
           updatedAt: serverTimestamp()
         });
         alert("Homework updated successfully!");
