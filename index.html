@@ -5,26 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Homework Portal - Parent View</title>
   <script src="https://cdn.tailwindcss.com"></script>
-        <!-- PWA & Android Settings -->
-      <link rel="manifest" href="./manifest.json">
-      <meta name="theme-color" content="#007bff">
-      
-      <!-- iOS (Apple Safari) Specific Settings -->
-      <meta name="apple-mobile-web-app-capable" content="yes">
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-      <meta name="apple-mobile-web-app-title" content="Homework Portal">
-      <link rel="apple-touch-icon" href="./icon-192.png">
-      
-      <!-- Register Service Worker -->
-      <script>
-        if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-              .then((reg) => console.log('Service Worker registered:', reg.scope))
-              .catch((err) => console.error('Service Worker registration failed:', err));
-          });
-        }
-      </script>
+  <!-- PWA & Android Settings -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#007bff">
+  
+  <!-- iOS (Apple Safari) Specific Settings -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Homework Portal">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('Service Worker registered:', reg.scope))
+          .catch((err) => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
@@ -36,9 +36,9 @@
         <p class="text-xs text-indigo-200">Aditya Thaksh International School</p>
       </div>
       <nav class="flex gap-2">
-        <a href="index.html" class="px-3 py-1.5 rounded-md bg-white text-indigo-900 font-medium text-xs shadow">Parent Portal</a>
-        <a href="teacher.html" class="px-3 py-1.5 rounded-md bg-indigo-800 text-indigo-200 hover:text-white font-medium text-xs transition-all">Teacher Login</a>
-        <a href="principal.html" class="px-3 py-1.5 rounded-md bg-indigo-800 text-indigo-200 hover:text-white font-medium text-xs transition-all">Principal Login</a>
+        <a href="https://adityathaksh.github.io/Agenda/" class="px-3 py-1.5 rounded-md bg-white text-indigo-900 font-medium text-xs shadow">Parent Portal</a>
+        <a href="https://adityathaksh.github.io/Agenda/teacher.html" class="px-3 py-1.5 rounded-md bg-indigo-800 text-indigo-200 hover:text-white font-medium text-xs transition-all">Teacher Login</a>
+        <a href="https://adityathaksh.github.io/Agenda/principal.html" class="px-3 py-1.5 rounded-md bg-indigo-800 text-indigo-200 hover:text-white font-medium text-xs transition-all">Principal Login</a>
       </nav>
     </div>
   </header>
