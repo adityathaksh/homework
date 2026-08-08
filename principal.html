@@ -6,29 +6,26 @@
   <title>Principal Portal - Aditya Thaksh International School</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
-
   <!-- PWA & Android Settings -->
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#007bff">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#007bff">
 
-<!-- iOS (Apple Safari) Specific Settings -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Homework Portal">
-<link rel="apple-touch-icon" href="./icon-192.png">
+  <!-- iOS (Apple Safari) Specific Settings -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Homework Portal">
+  <link rel="apple-touch-icon" href="./icon-192.png">
 
-<!-- Register Service Worker -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then((reg) => console.log('Service Worker registered:', reg.scope))
-        .catch((err) => console.error('Service Worker registration failed:', err));
-    });
-  }
-</script>
-
-  
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('Service Worker registered:', reg.scope))
+          .catch((err) => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
@@ -112,6 +109,26 @@
     const PRINCIPAL_EMAIL = "thakshinternationalrjy@aditya.ac.in";
     let principalUnsub = null;
     let currentPrincipalData = [];
+
+    // Helper function rendering links side-by-side using inline-flex
+    function formatHomeworkContent(text) {
+      if (!text) return '';
+
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+      return text.replace(urlRegex, (url) => {
+        // Strip trailing punctuation if attached to URL
+        const cleanUrl = url.replace(/[.,;)]$/, '');
+
+        // Google Drive Link -> Side-by-Side Compact Button
+        if (cleanUrl.includes('drive.google.com')) {
+          return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1 my-0.5 mr-1.5 bg-indigo-50 text-indigo-700 font-semibold text-xs rounded border border-indigo-200 hover:bg-indigo-100 transition-all">📁 Open Attachment ↗</a>`;
+        }
+
+        // Standard Web Links -> Inline Clickable Link
+        return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-medium underline break-all hover:text-indigo-800">${cleanUrl}</a>`;
+      });
+    }
 
     onAuthStateChanged(auth, async (user) => {
       const errorMsg = document.getElementById('loginError');
@@ -211,7 +228,13 @@
                 ${item.status === 'approved' ? '✓ Approved' : '⏳ Pending'}
               </button>
             </div>
-            <textarea id="edit-${item.id}" rows="2" class="w-full text-sm p-2 border rounded-lg outline-none">${item.content}</textarea>
+            
+            <!-- Live preview showing side-by-side clickable attachments -->
+            <div class="text-slate-700 text-sm whitespace-pre-line leading-snug bg-slate-50 p-3 rounded-lg border border-slate-100">${formatHomeworkContent(item.content)}</div>
+            
+            <!-- Edit box for Principal modifications -->
+            <textarea id="edit-${item.id}" rows="2" class="w-full text-sm p-2 border rounded-lg outline-none font-sans bg-white focus:ring-2 focus:ring-indigo-500">${item.content}</textarea>
+            
             <div class="flex justify-end gap-2">
               <button onclick="saveEdit('${item.id}')" class="px-3 py-1 bg-slate-800 text-white rounded-md text-xs">Save Edit</button>
               <button onclick="deleteEntry('${item.id}')" class="px-3 py-1 bg-rose-50 text-rose-600 rounded-md text-xs">Delete</button>
@@ -258,4 +281,3 @@
   </script>
 </body>
 </html>
-  
