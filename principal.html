@@ -211,10 +211,20 @@
           return;
         }
 
+        // 1. Collect all documents
         snapshot.forEach((docSnap) => {
-          const item = { id: docSnap.id, ...docSnap.data() };
-          currentPrincipalData.push(item);
+          currentPrincipalData.push({ id: docSnap.id, ...docSnap.data() });
+        });
 
+        // 2. Sort documents grade-wise (natural alphanumeric order)
+        currentPrincipalData.sort((a, b) => {
+          const gradeA = a.grade || '';
+          const gradeB = b.grade || '';
+          return gradeA.localeCompare(gradeB, undefined, { numeric: true, sensitivity: 'base' });
+        });
+
+        // 3. Render the sorted entries
+        currentPrincipalData.forEach((item) => {
           const card = document.createElement('div');
           card.className = "bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3";
           card.innerHTML = `
